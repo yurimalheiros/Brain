@@ -21,8 +21,6 @@ import java.util.*;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.coode.owlapi.manchesterowlsyntax.*;
-import org.semanticweb.elk.owlapi.*;
-import org.semanticweb.elk.reasoner.config.ReasonerConfiguration;
 import org.semanticweb.owlapi.apibinding.OWLManager;
 import org.semanticweb.owlapi.expression.*;
 import org.semanticweb.owlapi.model.*;
@@ -30,6 +28,8 @@ import org.semanticweb.owlapi.profiles.*;
 import org.semanticweb.owlapi.reasoner.*;
 import org.semanticweb.owlapi.util.*;
 import org.semanticweb.owlapi.vocab.PrefixOWLOntologyFormat;
+import org.semanticweb.HermiT.Reasoner;
+
 
 import uk.ac.ebi.brain.error.*;
 
@@ -53,7 +53,8 @@ public class Brain {
 	public OWLDatatype BOOLEAN;
 	public static final String DEFAULT_PREFIX = "brain#";
 	private boolean isClassified;
-	private ElkReasonerConfiguration configuration;
+//	private ElkReasonerConfiguration configuration;
+
 
 	public OWLOntology getOntology() {
 		return ontology;
@@ -175,9 +176,7 @@ public class Brain {
 		this.bidiShortFormProvider = new BidirectionalShortFormProviderAdapter(this.manager, importsClosure, shortFormProvider);
 		this.entityChecker = new ShortFormEntityChecker(this.bidiShortFormProvider);
 
-		Logger.getLogger("org.semanticweb.elk").setLevel(Level.OFF);
-
-		this.reasonerFactory = new ElkReasonerFactory();
+        this.reasonerFactory = new Reasoner.ReasonerFactory();
 		this.reasoner = this.getReasonerFactory().createReasoner(this.ontology);
 
 		this.isClassified = false;
@@ -234,15 +233,13 @@ public class Brain {
 		this.bidiShortFormProvider = new BidirectionalShortFormProviderAdapter(this.manager, importsClosure, shortFormProvider);
 		this.entityChecker = new ShortFormEntityChecker(this.bidiShortFormProvider);
 
-		Logger.getLogger("org.semanticweb.elk").setLevel(Level.OFF);
-
 		if(numberOfWorkers != -1){
-			this.configuration = new ElkReasonerConfiguration();
-			this.configuration.getElkConfiguration().setParameter(ReasonerConfiguration.NUM_OF_WORKING_THREADS, Integer.toString(numberOfWorkers));
-			this.reasonerFactory = new ElkReasonerFactory();
-			this.reasoner = this.getReasonerFactory().createReasoner(this.ontology, this.configuration);
+            this.reasonerFactory = new Reasoner.ReasonerFactory();
+
+            OWLReasonerConfiguration config = new SimpleConfiguration();
+            this.reasoner = this.getReasonerFactory().createReasoner(this.ontology, config);
 		}else{
-			this.reasonerFactory = new ElkReasonerFactory();
+            this.reasonerFactory = new Reasoner.ReasonerFactory();
 			this.reasoner = this.getReasonerFactory().createReasoner(this.ontology);
 		}
 
@@ -1583,11 +1580,7 @@ public class Brain {
 	public void sleep() {
 		this.reasoner.flush();
 		this.reasoner.dispose();
-		if(this.configuration == null){
-			this.reasoner = this.getReasonerFactory().createReasoner(this.ontology);
-		}else{
-			this.reasoner = this.getReasonerFactory().createReasoner(this.ontology, this.configuration);
-		}
+        this.reasoner = this.getReasonerFactory().createReasoner(this.ontology);
 		this.isClassified = false;
 	}
 
